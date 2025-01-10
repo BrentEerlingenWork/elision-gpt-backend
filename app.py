@@ -21,10 +21,6 @@ with open('secret.txt', 'r') as file:
 chroma_client = chromadb.HttpClient(host='localhost', port=8000)
 chroma_collection = chroma_client.get_collection(name="elision-gpt-embeddings")
 
-# Extract embeddings and filenames from the loaded data
-# filenames = chroma_collection.get(include=["documents"])['documents']
-
-
 def find_most_similar(query_embedding, top_k=1):
     similarities = chroma_collection.query(
         query_embedding,
@@ -59,8 +55,6 @@ def process_query(query, history):
 
     combined_context = "\n".join(context)
     
-    print(combined_context)
-
     prompt = f"""
             Use the users previous messages for better context:
             {history}
