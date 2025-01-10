@@ -1,8 +1,8 @@
 import os
 
-import chromadb
 import numpy as np
 import openai
+from astrapy import DataAPIClient
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -17,16 +17,25 @@ CORS(app)
 with open('secret.txt', 'r') as file:
     openai.api_key = file.read().strip()
 
-# Load saved embeddings
-chroma_client = chromadb.HttpClient(host='localhost', port=8000)
-chroma_collection = chroma_client.get_collection(name="elision-gpt-embeddings")
+# Initialize the client
+db_client = DataAPIClient(
+    "AstraCS:iTBppMMgcDMaNNglttxkwRBE:0f15f5d299f20ea4c7a001fdcfc7462eb2d46c18c7551ffb9fca5daad373e563")
+db = db_client.get_database_by_api_endpoint(
+    "https://f2e7e6fe-b6e0-4c9d-9f4f-a4b8a0b9df4c-us-east-2.apps.astra.datastax.com"
+)
+
+collection = db.get_collection("elision_gpt_embeddings")
+
+print(f"Connected to Astra DB: {db.list_collection_names()}")
+
 
 def find_most_similar(query_embedding, top_k=1):
-    similarities = chroma_collection.query(
-        query_embedding,
-        n_results=top_k,
+    similarities = collection.find(
+        sort={"$vector": query_embedding},
+        limit=top_k,
+        include_similarity=True,
     )
-
+    print(similarities)
     return similarities['documents'][0]
 
 
@@ -54,7 +63,7 @@ def process_query(query, history):
             context.append(chunk_content)
 
     combined_context = "\n".join(context)
-    
+
     prompt = f"""
             Use the users previous messages for better context:
             {history}
@@ -93,6 +102,7 @@ def query():
 
     query = data['query']
     history = data['history']
+
     try:
         result = process_query(query, history)
         return jsonify({"response": result})

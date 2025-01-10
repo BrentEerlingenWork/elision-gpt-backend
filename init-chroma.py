@@ -10,14 +10,14 @@ filenames = [data['filename'] for data in embeddings]
 
 # Initialize Chroma client
 client = chromadb.HttpClient(
-    host='localhost', port=8000)
+    host='54.216.187.225', port=8000)
 
 # Create or retrieve a collection
-collection = client.get_collection(name="elision-gpt-embeddings")
-# collection = client.create_collection(name="elision-gpt-embeddings",
-#                                       metadata={
-#                                           "hnsw:space": "cosine"
-#                                       })
+# collection = client.get_collection(name="elision-gpt-embeddings")
+collection = client.create_collection(name="elision-gpt-embeddings",
+                                      metadata={
+                                           "hnsw:space": "cosine"
+                                      })
 
 # Prepare data (example IDs and metadata)
 ids = [f"doc_{i}" for i in range(len(embeddings.tolist()))]
