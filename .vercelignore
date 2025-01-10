@@ -1,0 +1,6 @@
+# Ignore everything (folders and files) on root only
+/*
+!app.py
+!vercel.json
+!requirements.txt
+!secret.txt

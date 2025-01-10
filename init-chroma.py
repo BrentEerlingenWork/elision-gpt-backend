@@ -1,6 +1,5 @@
 import chromadb
 import numpy as np
-from chromadb.config import Settings
 
 # Load embeddings from .npy file
 embeddings = np.load('embeddings/embeddings.npy', allow_pickle=True)

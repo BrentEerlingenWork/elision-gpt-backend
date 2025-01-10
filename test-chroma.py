@@ -1,6 +1,5 @@
 import chromadb
 import numpy as np
-from chromadb.config import Settings
 
 print('initializing ChromaDB')
 
