@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import openai
 from astrapy import DataAPIClient
@@ -24,19 +22,24 @@ db = db_client.get_database_by_api_endpoint(
     "https://f2e7e6fe-b6e0-4c9d-9f4f-a4b8a0b9df4c-us-east-2.apps.astra.datastax.com"
 )
 
-collection = db.get_collection("elision_gpt_embeddings")
-
 print(f"Connected to Astra DB: {db.list_collection_names()}")
 
 
 def find_most_similar(query_embedding, top_k=1):
-    similarities = collection.find(
+    collection = db.get_collection("elision_gpt_embeddings")
+
+    similarities = list(collection.find(
+        projection={"filename": True},
         sort={"$vector": query_embedding},
         limit=top_k,
-        include_similarity=True,
-    )
-    print(similarities)
-    return similarities['documents'][0]
+        include_sort_vector=True
+    ))
+
+    if len(similarities) > 0:
+        filenames = [item['filename'] for item in similarities]
+        return filenames
+
+    return []
 
 
 def generate_embedding(client, text):
@@ -49,7 +52,9 @@ def generate_embedding(client, text):
 
 def process_query(query, history):
     client = openai.OpenAI(api_key=openai.api_key)
-    query_embedding = generate_embedding(client, query)
+    query_embedding = generate_embedding(
+        client, query).astype(np.float64).tolist()
+
     top_k = 60
 
     filenames = find_most_similar(
