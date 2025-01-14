@@ -1,3 +1,5 @@
+import os
+
 import boto3
 import numpy as np
 import openai
@@ -13,21 +15,26 @@ app = Flask(__name__)
 CORS(app)
 
 # Load OpenAI API key
-with open('secret.txt', 'r') as file:
-    openai.api_key = file.read().strip()
+openai.api_key = os.getenv('OPEN_AI_KEY', 'default_open_ai_key')
+aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID', 'default_aws_access_key_id')
+aws_secret_access_key = os.getenv(
+    'AWS_SECRET_ACCESS_KEY', 'default_aws_secret_access_key')
+aws_region = os.getenv('AWS_REGION', 'eu-central-1')
+astra_client = os.getenv('ASTRA_CLIENT', 'default_astra_client')
+astra_db_endpoint = os.getenv('ASTRA_DB_ENDPOINT', 'default_astra_db_endpoint')
 
 # Initialize the client
 db_client = DataAPIClient(
-    "AstraCS:iTBppMMgcDMaNNglttxkwRBE:0f15f5d299f20ea4c7a001fdcfc7462eb2d46c18c7551ffb9fca5daad373e563")
+    astra_client)
 db = db_client.get_database_by_api_endpoint(
-    "https://f2e7e6fe-b6e0-4c9d-9f4f-a4b8a0b9df4c-us-east-2.apps.astra.datastax.com"
+    astra_db_endpoint
 )
 
 s3 = boto3.client(
     's3',
-    aws_access_key_id='AKIATNVEVXUYCF3ZUQFB',
-    aws_secret_access_key='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',
-    region_name='eu-central-1'
+    aws_access_key_id,
+    aws_secret_access_key,
+    region_name=aws_region
 )
 
 print(f"Connected to Astra DB: {db.list_collection_names()}")
