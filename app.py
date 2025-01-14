@@ -1,3 +1,4 @@
+import boto3
 import numpy as np
 import openai
 from astrapy import DataAPIClient
@@ -20,6 +21,13 @@ db_client = DataAPIClient(
     "AstraCS:iTBppMMgcDMaNNglttxkwRBE:0f15f5d299f20ea4c7a001fdcfc7462eb2d46c18c7551ffb9fca5daad373e563")
 db = db_client.get_database_by_api_endpoint(
     "https://f2e7e6fe-b6e0-4c9d-9f4f-a4b8a0b9df4c-us-east-2.apps.astra.datastax.com"
+)
+
+s3 = boto3.client(
+    's3',
+    aws_access_key_id='AKIATNVEVXUYCF3ZUQFB',
+    aws_secret_access_key='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',
+    region_name='eu-central-1'
 )
 
 print(f"Connected to Astra DB: {db.list_collection_names()}")
@@ -50,6 +58,21 @@ def generate_embedding(client, text):
     return np.array(response.data[0].embedding)
 
 
+def download_file_to_list(bucket_name, file_key) -> str:
+    try:
+        # Download the file's content into memory (without saving it locally)
+        file_content = s3.get_object(Bucket=bucket_name,
+                                     Key='chunks/Administration Console.pdf_chunk_34.txt')[
+            'Body'].read().decode('utf-8')
+
+        return file_content
+
+    except Exception as e:
+        print('FAIL')
+        print(f"Error: {e}")
+        return []
+
+
 def process_query(query, history):
     client = openai.OpenAI(api_key=openai.api_key)
     query_embedding = generate_embedding(
@@ -62,10 +85,8 @@ def process_query(query, history):
 
     context = []
     for idx in filenames:
-        chunk_path = f"chunks/{idx}"
-        with open(chunk_path, "r") as file:
-            chunk_content = file.read()
-            context.append(chunk_content)
+        chunk_content = download_file_to_list('rag-chunks', f'{idx}')
+        context.append(chunk_content)
 
     combined_context = "\n".join(context)
 
@@ -91,7 +112,7 @@ def process_query(query, history):
     return response.choices[0].message.content.strip()
 
 
-@app.route('/', methods=['GET'])
+@ app.route('/', methods=['GET'])
 def index():
     return jsonify({
         "message": "Welcome to the OpenAI Query API",
@@ -99,7 +120,7 @@ def index():
     })
 
 
-@app.route('/query', methods=['POST'])
+@ app.route('/query', methods=['POST'])
 def query():
     data = request.json
     if not data or 'query' not in data:

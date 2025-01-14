@@ -1,4 +1,4 @@
-import os
+import json
 
 import numpy as np
 from astrapy import DataAPIClient
@@ -15,7 +15,32 @@ db = client.get_database_by_api_endpoint(
 
 print(f"Connected to Astra DB: {db.list_collection_names()}")
 
+
+def partition(lst, n):
+    division = len(lst) / n
+    return [lst[round(division * i):round(division * (i + 1))] for i in range(n)]
+
+
 collection = db.get_collection("elision_gpt_embeddings")
 
-insertion_result = collection.insert_many(embeddings)
-print(f"* Inserted {len(insertion_result.inserted_ids)} items.\n")
+# **Save to JSON**
+# Convert array to list if necessary
+if isinstance(embeddings, np.ndarray):
+    partitioned_embeddings = partition(embeddings.tolist(), 30)
+
+    for iter in range(27, 31):
+        data = partitioned_embeddings[iter - 1]
+        transformed_array = [
+            {"filename": item["filename"], "$vector": item["embedding"]}
+            for item in data
+        ]
+
+        insertion_result = collection.insert_many(
+            documents=transformed_array, concurrency=1, chunk_size=10)
+        print(f"Batch {iter} of 30: Inserted {
+              len(insertion_result.inserted_ids)} items.\n")
+
+    print("DONE")
+
+# insertion_result = collection.insert_many(embeddings)
+# print(f"* Inserted {len(insertion_result.inserted_ids)} items.\n")
