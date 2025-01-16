@@ -12,7 +12,8 @@ from flask_cors import CORS
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://elision-gpt-frontend.vercel.app"]}})
+CORS(app, resources={
+     r"/*": {"origins": ["http://localhost:3000", "https://elision-gpt-frontend.vercel.app"]}})
 
 # Load OpenAI API key
 openai.api_key = os.getenv('OPEN_AI_KEY', 'default_open_ai_key')
@@ -69,7 +70,7 @@ def download_file_to_list(bucket_name, file_key) -> str:
     try:
         # Download the file's content into memory (without saving it locally)
         file_content = s3.get_object(Bucket=bucket_name,
-                                     Key='chunks/Administration Console.pdf_chunk_34.txt')[
+                                     Key='chunks/' + file_key)[
             'Body'].read().decode('utf-8')
 
         return file_content
