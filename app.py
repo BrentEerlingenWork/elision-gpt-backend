@@ -12,7 +12,7 @@ from flask_cors import CORS
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "https://elision-gpt-frontend.vercel.app"]}})
 
 # Load OpenAI API key
 openai.api_key = os.getenv('OPEN_AI_KEY', 'default_open_ai_key')
@@ -144,4 +144,4 @@ def query():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, ssl_context='adhoc')
